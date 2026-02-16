@@ -1,0 +1,8 @@
+fastapi
+uvicorn
+pydantic
+spacy
+mysql-connector-python
+psycopg2-binary
+oracledb
+python-dotenv
