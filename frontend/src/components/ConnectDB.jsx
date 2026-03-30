@@ -5,9 +5,9 @@ const ConnectDB = ({ onConnect }) => {
     const [dbType, setDbType] = useState('sqlite');
     const [path, setPath] = useState('sample.db'); // Default for demo
     const [host, setHost] = useState('localhost');
-    const [user, setUser] = useState('root');
-    const [password, setPassword] = useState('');
     const [database, setDatabase] = useState('');
+    const [user, setUser] = useState('');
+    const [password, setPassword] = useState('');
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
 
@@ -44,7 +44,6 @@ const ConnectDB = ({ onConnect }) => {
                         <option value="sqlite">SQLite (File)</option>
                         <option value="mysql">MySQL</option>
                         <option value="postgresql">PostgreSQL</option>
-                        <option value="oracle">Oracle</option>
                     </select>
                 </div>
 
@@ -62,7 +61,7 @@ const ConnectDB = ({ onConnect }) => {
                     </div>
                 ) : (
                     <>
-                        <div className="grid grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div>
                                 <label className="block text-sm font-medium text-gray-700">Host</label>
                                 <input type="text" value={host} onChange={(e) => setHost(e.target.value)} className="mt-1 block w-full rounded-md border p-2" />
@@ -72,7 +71,7 @@ const ConnectDB = ({ onConnect }) => {
                                 <input type="text" value={database} onChange={(e) => setDatabase(e.target.value)} className="mt-1 block w-full rounded-md border p-2" />
                             </div>
                         </div>
-                        <div className="grid grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div>
                                 <label className="block text-sm font-medium text-gray-700">User</label>
                                 <input type="text" value={user} onChange={(e) => setUser(e.target.value)} className="mt-1 block w-full rounded-md border p-2" />

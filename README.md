@@ -1,6 +1,6 @@
 # NLP to SQL Database Management System
 
-A Natural Language Processing (NLP) based interface to query SQL databases using plain English.
+A Natural Language Processing (NLP) based interface to query and modify SQL databases using plain English, powered by the **Google Gemini API**.
 
 ## Prerequisites
 - **Python 3.8+**
@@ -29,7 +29,6 @@ source venv/bin/activate
 Install the required Python dependencies:
 ```bash
 pip install -r requirements.txt
-python -m spacy download en_core_web_sm
 ```
 
 ### 3. Database Setup (Crucial)
@@ -64,8 +63,10 @@ The application will run at `http://localhost:5173` (or similar).
 
 ## Usage
 1. Open the frontend URL in your browser.
-2. Select a database context (Employees, Students, or Ecommerce).
-3. Type natural language queries like:
+2. Ensure you have your Google Gemini API Key ready.
+3. Select a database context (Employees, Students, or Ecommerce) and input your API Key.
+4. Select the Mode (Only Querying vs Data Modification).
+5. Type natural language queries like:
    - "Show me all employees in IT department"
    - "List students with grade A in Calculus"
-   - "Total sales for Electronics category"
+   - "Create a new table called test with id and name"

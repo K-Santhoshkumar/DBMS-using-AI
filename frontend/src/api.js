@@ -27,9 +27,43 @@ export const getSchema = async () => {
     }
 };
 
-export const queryDatabase = async (query) => {
+export const queryDatabase = async (query, mode = 'query', sessionId = null) => {
     try {
-        const response = await api.post('/query', { natural_language_query: query });
+        const payload = { 
+            natural_language_query: query, 
+            mode: mode 
+        };
+        if (sessionId) {
+            payload.session_id = sessionId;
+        }
+        const response = await api.post('/query', payload);
+        return response.data;
+    } catch (error) {
+        throw error.response ? error.response.data : error;
+    }
+};
+
+export const getModelInfo = async () => {
+    try {
+        const response = await api.get('/model-info');
+        return response.data;
+    } catch (error) {
+        throw error.response ? error.response.data : error;
+    }
+};
+
+export const getHistory = async (sessionId) => {
+    try {
+        const response = await api.get(`/history/${sessionId}`);
+        return response.data;
+    } catch (error) {
+        throw error.response ? error.response.data : error;
+    }
+};
+
+export const submitFeedback = async (feedbackData) => {
+    try {
+        const response = await api.post('/feedback', feedbackData);
         return response.data;
     } catch (error) {
         throw error.response ? error.response.data : error;
