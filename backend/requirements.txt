@@ -2,13 +2,11 @@ fastapi==0.104.1
 uvicorn==0.24.0
 pydantic==2.5.2
 sqlalchemy==2.0.23
-openai
+openai==1.30.5
 python-dotenv==1.0.1
 mysql-connector-python
 psycopg2-binary
-oracledb
 bcrypt
 python-jose
 python-multipart
-gunicorn
 cryptography
