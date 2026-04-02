@@ -338,6 +338,3 @@ async def get_history(db_session_id: int, current_user: dict = Depends(get_curre
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
