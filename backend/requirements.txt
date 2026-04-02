@@ -7,3 +7,8 @@ python-dotenv==1.0.1
 mysql-connector-python
 psycopg2-binary
 oracledb
+bcrypt
+python-jose
+python-multipart
+gunicorn
+cryptography

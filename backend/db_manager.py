@@ -1,131 +1,145 @@
 from typing import Dict, List, Any, Optional
 import urllib.parse
 from sqlalchemy import create_engine, inspect, text, URL
+from sqlalchemy.pool import NullPool
 from sqlalchemy.engine import Engine
+import threading
+from user_manager import user_manager, DBSession
 
-class DBManager:
+class ConnectionPoolManager:
     def __init__(self):
-        self.engine: Optional[Engine] = None
-        self.db_type: Optional[str] = None
+        self.connections: Dict[int, Engine] = {}
+        self.lock = threading.Lock()
 
-    def connect(self, db_type: str, connection_details: Dict[str, str]) -> bool:
-        """
-        Establishes a database connection based on type and details.
-        """
-        self.db_type = db_type.lower()
+    def get_or_create_engine(self, db_session_id: int) -> Engine:
+        with self.lock:
+            if db_session_id in self.connections:
+                return self.connections[db_session_id]
+
+        # Cache miss, fetch from Neon DB
+        db = next(user_manager.get_db())
+        session_record = db.query(DBSession).filter(DBSession.id == db_session_id).first()
+        
+        if not session_record:
+            raise ValueError("Database session not found or expired.")
+            
+        details = user_manager.decrypt_dict(session_record.encrypted_details)
+        db_type = session_record.db_type
+        
         connection_string = ""
-
-        try:
-            if self.db_type == "sqlite":
-                # For SQLite, path is the file path
-                db_path = connection_details.get("path", "sample.db")
-                connection_string = f"sqlite:///{db_path}"
+        
+        import os
+        
+        if db_type == "sqlite":
+            raw_path = details.get("path", "sample.db")
+            # SSRF/Path Traversal Protection: Extract just the filename
+            filename = os.path.basename(raw_path)
+            if not filename or filename == "." or filename == "..":
+                filename = "sample.db"
+                
+            base_dir = os.path.dirname(os.path.abspath(__file__))
+            db_path = os.path.join(base_dir, filename)
+            connection_string = f"sqlite:///{db_path}"
+        else:
+            user = details.get("user", "").strip() or None
+            password = details.get("password", "") or None
+            host = details.get("host", "localhost").strip() or "localhost"
             
+            # SSRF Protection: Prevent connections to local network unless explicitly allowed by environment
+            allow_local = os.getenv("ALLOW_LOCAL_DB", "true").lower() == "true"
+            forbidden_hosts = ["localhost", "127.0.0.1", "::1", "0.0.0.0"]
+            
+            if not allow_local:
+                # Basic check for localhost aliases that could map to internal metadata or db
+                if host.lower() in forbidden_hosts or host.startswith("169.254."):
+                    raise ValueError("Connections to local or internal loopback addresses are restricted for security.")
+            
+            if host.lower() == "localhost" and db_type == "postgresql":
+                host = "127.0.0.1"
+                
+            port_str = details.get("port")
+            port = None
+            if port_str:
+                port = int(port_str)
             else:
-                user = connection_details.get("user", "").strip() or None
-                password = connection_details.get("password", "") or None
+                if db_type == "mysql": port = 3306
+                elif db_type == "postgresql": port = 5432
+                elif db_type == "sqlserver": port = 1433
                 
-                # Validate required credentials
-                if self.db_type in ["mysql", "postgresql"]:
-                    if not user or not password:
-                        raise ValueError(f"{self.db_type.capitalize()} requires both 'user' and 'password' to be provided.")
-                
-                host = connection_details.get("host", "localhost").strip() or "localhost"
-                
-                # Prevent psycopg2 from defaulting to IPv6 (::1) on Windows, which often causes auth issues
-                if host.lower() == "localhost" and self.db_type == "postgresql":
-                    host = "127.0.0.1"
-                
-                # Resolve port safely
-                port_str = connection_details.get("port")
-                port = None
-                
-                try:
-                    if self.db_type == "mysql":
-                        drivername = "mysql+mysqlconnector"
-                        port = int(port_str) if port_str else 3306
-                    elif self.db_type == "postgresql":
-                        drivername = "postgresql"
-                        port = int(port_str) if port_str else 5432
-                    else:
-                        raise ValueError(f"Unsupported database type: {self.db_type}")
-                except ValueError as ve:
-                    # Catch ValueError from int() if port_str is garbled
-                    if "invalid literal" in str(ve).lower():
-                        raise ValueError(f"Invalid port number provided: '{port_str}'")
-                    raise ve
-                
-                database = connection_details.get("database", "").strip() or None
-                
-                query = {}
-                
-                connection_string = URL.create(
-                    drivername=drivername,
-                    username=user,
-                    password=password,
-                    host=host,
-                    port=port,
-                    database=database,
-                    query=query
-                )
-                
-                # Print debug visibility safely
-                print(f"DEBUG: Attempting connection to {drivername}://{user}:***@{host}:{port}/{database}")
-
-            self.engine = create_engine(connection_string)
-            # Test connection
-            with self.engine.connect() as conn:
-                conn.execute(text("SELECT 1"))
+            drivername = db_type
+            if db_type == "mysql": drivername = "mysql+mysqlconnector"
             
-            return True
+            database = details.get("database", "").strip() or None
+            
+            query = {}
+            if host and "neon.tech" in host:
+                query = {"sslmode": "require"}
+            
+            connection_string = URL.create(
+                drivername=drivername,
+                username=user,
+                password=password,
+                host=host,
+                port=port,
+                database=database,
+                query=query
+            )
+            
+        connect_args = {}
+        if db_type == "postgresql":
+            connect_args = {
+                "keepalives": 1,
+                "keepalives_idle": 30,
+                "keepalives_interval": 10,
+                "keepalives_count": 5
+            }
 
-        except Exception as e:
-            print(f"Connection failed: {str(e)}")
-            self.engine = None
-            raise e
+        engine = create_engine(
+            connection_string,
+            connect_args=connect_args,
+            pool_recycle=60,
+            pool_pre_ping=True,
+            pool_size=10,
+            max_overflow=20
+        )
+        
+        # Test connection
+        with engine.connect() as conn:
+            conn.execute(text("SELECT 1"))
+            
+        with self.lock:
+            self.connections[db_session_id] = engine
+            return engine
 
-    def disconnect(self):
-        """
-        Closes the database engine gracefully.
-        """
-        if self.engine:
-            self.engine.dispose()
-            self.engine = None
-            self.db_type = None
-            print("DEBUG: Database disconnected.")
+    def remove_engine(self, db_session_id: int):
+        with self.lock:
+            if db_session_id in self.connections:
+                self.connections[db_session_id].dispose()
+                del self.connections[db_session_id]
 
-    def get_schema(self) -> Dict[str, List[str]]:
-        """
-        Introspects the database to get tables and columns.
-        Returns: {table_name: [column_names]}
-        """
-        if not self.engine:
-            raise ConnectionError("Database not connected")
-
-        inspector = inspect(self.engine)
+    def get_schema(self, db_session_id: int) -> Dict[str, List[str]]:
+        engine = self.get_or_create_engine(db_session_id)
+        inspector = inspect(engine)
         schema_info = {}
 
         try:
             table_names = inspector.get_table_names()
             for table in table_names:
-                # Get Columns
                 columns = inspector.get_columns(table)
                 column_details = []
                 for col in columns:
                     try:
                         col_type = str(col['type'])
-                    except Exception:
+                    except:
                          col_type = "UNKNOWN"
                     column_details.append({
                         "name": col['name'],
                         "type": col_type
                     })
                 
-                # Get Primary Keys
                 pk_constraint = inspector.get_pk_constraint(table)
                 pks = pk_constraint.get('constrained_columns', [])
 
-                # Get Foreign Keys
                 fks = inspector.get_foreign_keys(table)
                 fk_details = [{
                     "constrained_columns": fk['constrained_columns'],
@@ -144,14 +158,7 @@ class DBManager:
             print(f"Schema introspection failed: {str(e)}")
             raise e
 
-    def execute_query(self, query: str, mode: str = "query") -> List[Dict[str, Any]]:
-        """
-        Executes a SQL query and returns results as a list of dicts.
-        If mode is 'modification', it allows DML/DDL and commits.
-        """
-        if not self.engine:
-            raise ConnectionError("Database not connected")
-        
+    def _execute_sync(self, engine: Engine, query: str, mode: str, db_type: str) -> List[Dict[str, Any]]:
         import re
         query_upper = query.strip().upper()
 
@@ -167,15 +174,17 @@ class DBManager:
                 if re.search(fr'\b{kw}\b', query_upper):
                     raise ValueError(f"Data manipulation not allowed in Querying mode. Found restricted keyword: {kw}")
 
-            with self.engine.connect() as conn:
+            with engine.connect() as conn:
                 result = conn.execute(text(query))
-                keys = result.keys()
-                return [dict(zip(keys, row)) for row in result.fetchall()]
+                try:
+                    keys = result.keys()
+                    return [dict(zip(keys, row)) for row in result.fetchall()]
+                except Exception:
+                    return [{"message":"Executed successfully but return unparsable results."}]
         
         elif mode == "modification":
-            # For DML/DDL operations
-            if self.db_type == "sqlite":
-                with self.engine.connect() as conn:
+            if db_type == "sqlite":
+                with engine.connect() as conn:
                     dbapi_conn = conn.connection.driver_connection
                     cursor = dbapi_conn.cursor()
                     try:
@@ -188,7 +197,7 @@ class DBManager:
                     finally:
                         cursor.close()
             else:
-                with self.engine.connect() as conn:
+                with engine.connect() as conn:
                     with conn.begin(): # implicit commit
                         result = conn.execute(text(query))
                         if result.returns_rows:
@@ -199,5 +208,14 @@ class DBManager:
         else:
             raise ValueError(f"Unknown mode: {mode}")
 
-# Global instance for simplicity in this project scope
-db_manager = DBManager()
+    async def execute_query_async(self, db_session_id: int, query: str, mode: str = "query") -> List[Dict[str, Any]]:
+        engine = self.get_or_create_engine(db_session_id)
+        
+        db = next(user_manager.get_db())
+        session_record = db.query(DBSession).filter(DBSession.id == db_session_id).first()
+        db_type = session_record.db_type if session_record else "unknown"
+        
+        from fastapi.concurrency import run_in_threadpool
+        return await run_in_threadpool(self._execute_sync, engine, query, mode, db_type)
+
+connection_pool = ConnectionPoolManager()

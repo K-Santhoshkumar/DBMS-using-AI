@@ -21,8 +21,8 @@ const ConnectDB = ({ onConnect }) => {
             : { host, user, password, database };
 
         try {
-            await connectDatabase(dbType, details);
-            onConnect();
+            const data = await connectDatabase(dbType, details);
+            onConnect(data);
         } catch (err) {
             setError(err.detail || 'Connection failed');
         } finally {

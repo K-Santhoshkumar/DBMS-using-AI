@@ -1,14 +1,29 @@
-# Python
+# Python / Backend
 __pycache__/
 *.py[cod]
 *$py.class
 venv/
 .env
+.env.local
 
-# Node
+# Node.js / Frontend
 node_modules/
 dist/
-.DS_Store
+dist-ssr/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.eslintcache
 
-# Databases
+# Databases (Local Dev Only)
 *.db
+*.sqlite
+
+# OS and Editor
+.DS_Store
+.vscode/
+.idea/
+*.swp
+*.bak
+backend/create_sample_db.py
+backend/migrate_db.py

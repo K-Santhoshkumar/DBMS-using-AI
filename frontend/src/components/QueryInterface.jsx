@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { queryDatabase } from '../api';
 import ResultsTable from './ResultsTable';
 
-const QueryInterface = ({ onSchemaChange }) => {
+const QueryInterface = ({ dbSessionId, onSchemaChange }) => {
     const [query, setQuery] = useState('');
     const [results, setResults] = useState(null);
     const [sql, setSql] = useState('');
@@ -11,16 +11,6 @@ const QueryInterface = ({ onSchemaChange }) => {
     const [nlpDebug, setNlpDebug] = useState(null);
     const [mode, setMode] = useState('query');
     const [executionTime, setExecutionTime] = useState(null);
-
-    // Initialize session ID once
-    const sessionId = React.useMemo(() => {
-        let sid = sessionStorage.getItem('nl2sql_session_id');
-        if (!sid) {
-            sid = Math.random().toString(36).substring(2, 15);
-            sessionStorage.setItem('nl2sql_session_id', sid);
-        }
-        return sid;
-    }, []);
 
     const handleQuery = async (e) => {
         e.preventDefault();
@@ -34,7 +24,7 @@ const QueryInterface = ({ onSchemaChange }) => {
         setExecutionTime(null);
 
         try {
-            const data = await queryDatabase(query, mode, sessionId);
+            const data = await queryDatabase(query, mode, dbSessionId);
             if (data.error) {
                 setError(data.error);
                 setSql(data.sql_query); // Show partial/erroneous SQL if available
