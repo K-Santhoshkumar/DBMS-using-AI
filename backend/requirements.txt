@@ -10,4 +10,4 @@ bcrypt
 python-jose
 python-multipart
 cryptography
-PYTHON_VERSION=3.11.9
+PYTHON_VERSION==3.11.9
