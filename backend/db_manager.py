@@ -94,21 +94,14 @@ class ConnectionPoolManager:
                 "keepalives_count": 5
             }
 
-        is_vercel = os.getenv("VERCEL") == "1"
-        
-        engine_kwargs = {
-            "connect_args": connect_args,
-            "pool_pre_ping": True
-        }
-        
-        if is_vercel:
-            engine_kwargs["poolclass"] = NullPool
-        else:
-            engine_kwargs["pool_recycle"] = 60
-            engine_kwargs["pool_size"] = 10
-            engine_kwargs["max_overflow"] = 20
-
-        engine = create_engine(connection_string, **engine_kwargs)
+        engine = create_engine(
+            connection_string,
+            connect_args=connect_args,
+            pool_recycle=60,
+            pool_pre_ping=True,
+            pool_size=10,
+            max_overflow=20
+        )
         
         # Test connection
         with engine.connect() as conn:
