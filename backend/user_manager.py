@@ -72,12 +72,20 @@ class UserManager:
                 "keepalives_count": 5
             }
             
-        self.engine = create_engine(
-            db_url,
-            connect_args=connect_args,
-            pool_recycle=60,
-            pool_pre_ping=True
-        )
+        # Optimize for Vercel
+        is_vercel = os.getenv("VERCEL") == "1"
+        
+        engine_kwargs = {
+            "connect_args": connect_args,
+            "pool_pre_ping": True
+        }
+        
+        if is_vercel:
+            engine_kwargs["poolclass"] = NullPool
+        else:
+            engine_kwargs["pool_recycle"] = 60
+
+        self.engine = create_engine(db_url, **engine_kwargs)
         self.SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=self.engine)
         
         # Ensure tables exist

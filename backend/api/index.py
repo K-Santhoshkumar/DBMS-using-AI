@@ -13,6 +13,8 @@ from main_processor import SQLQueryProcessor
 from user_manager import user_manager, User, DBSession, QueryHistory
 from auth import get_password_hash, verify_password, create_access_token, get_current_user, ACCESS_TOKEN_EXPIRE_MINUTES
 from sqlalchemy.orm import Session
+from mangum import Mangum
+
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
@@ -338,3 +340,5 @@ async def get_history(db_session_id: int, current_user: dict = Depends(get_curre
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
+# Vercel Handler (CRITICAL)
+handler = Mangum(app)
