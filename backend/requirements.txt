@@ -11,3 +11,4 @@ python-jose
 python-multipart
 cryptography
 gunicorn
+mangum
