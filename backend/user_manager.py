@@ -75,8 +75,7 @@ class UserManager:
         self.engine = create_engine(
             db_url,
             connect_args=connect_args,
-            pool_recycle=60,
-            pool_pre_ping=True
+            poolclass=NullPool
         )
         self.SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=self.engine)
         

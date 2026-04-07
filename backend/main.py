@@ -323,7 +323,7 @@ async def get_all_history(current_user: dict = Depends(get_current_user), db: Se
         history = db.query(QueryHistory).filter(QueryHistory.user_id == current_user["user_id"]).order_by(QueryHistory.timestamp.desc()).limit(limit).all()
         return {
             "query_count": len(history),
-            "history": [{"query": h.nl_query, "sql": h.sql_query, "database_name": h.database_name, "timestamp": h.timestamp.isoformat(), "success": h.success, "execution_time": h.execution_time, "row_count": h.row_count, "model_used": h.model_used} for h in history]
+            "history": [{"query": h.nl_query, "sql": h.sql_query, "database_name": h.database_name, "timestamp": h.timestamp.isoformat() + "Z", "success": h.success, "execution_time": h.execution_time, "row_count": h.row_count, "model_used": h.model_used} for h in history]
         }
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
@@ -335,10 +335,10 @@ async def get_history(db_session_id: int, current_user: dict = Depends(get_curre
         return {
             "session_id": str(db_session_id),
             "query_count": len(history),
-            "history": [{"query": h.nl_query, "sql": h.sql_query, "database_name": h.database_name, "timestamp": h.timestamp.isoformat(), "success": h.success} for h in history]
+            "history": [{"query": h.nl_query, "sql": h.sql_query, "database_name": h.database_name, "timestamp": h.timestamp.isoformat() + "Z", "success": h.success} for h in history]
         }
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
 if __name__ == "__main__":
-    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
+    pass

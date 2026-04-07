@@ -97,10 +97,7 @@ class ConnectionPoolManager:
         engine = create_engine(
             connection_string,
             connect_args=connect_args,
-            pool_recycle=60,
-            pool_pre_ping=True,
-            pool_size=10,
-            max_overflow=20
+            poolclass=NullPool
         )
         
         # Test connection
