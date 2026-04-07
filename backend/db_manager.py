@@ -97,7 +97,8 @@ class ConnectionPoolManager:
         engine = create_engine(
             connection_string,
             connect_args=connect_args,
-            poolclass=NullPool
+            poolclass=NullPool,
+            pool_reset_on_return=None
         )
         
         # Test connection

@@ -8,7 +8,11 @@ from typing import Dict, List, Any, Optional
 from datetime import datetime, timedelta
 import logging
 import traceback
+import sys
 import os
+
+# Allow imports from the parent directory for Vercel deployment
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from db_manager import connection_pool
 from main_processor import SQLQueryProcessor
