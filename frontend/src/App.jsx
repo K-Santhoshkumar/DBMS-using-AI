@@ -71,7 +71,7 @@ function App() {
       <header className="bg-blue-800 text-white p-4 shadow-lg shrink-0 z-10">
         <div className="container mx-auto flex justify-between items-center">
           <h1 className="text-xl font-bold flex items-center gap-2">
-            🤖 NL2SQL Deploy
+            🤖 NL2SQL
           </h1>
           <div className="flex items-center gap-2 sm:gap-4">
             {isConnected && (
@@ -82,23 +82,23 @@ function App() {
             )}
             {isAuthenticated && (
               <>
-                <button 
+                <button
                   onClick={() => setCurrentView(currentView === 'query' ? 'history' : 'query')}
                   className={`flex items-center gap-1.5 text-sm px-2 sm:px-3 py-1.5 rounded transition ${currentView === 'history' ? 'bg-blue-900 border border-blue-600' : 'bg-blue-600 hover:bg-blue-700'}`}
                   title={currentView === 'query' ? "History" : "Query Interface"}
                 >
                   {currentView === 'query' ? <><Clock size={16} /> <span className="hidden sm:inline">History</span></> : <><Code2 size={16} /> <span className="hidden sm:inline">Query</span></>}
                 </button>
-                <button 
+                <button
                   onClick={() => setIsProfileOpen(true)}
                   className="flex items-center gap-1.5 text-sm px-2 sm:px-3 py-1.5 rounded transition bg-blue-700 hover:bg-blue-600 border border-blue-500/30"
                   title={userProfile?.email}
                 >
-                  <User size={16} /> 
+                  <User size={16} />
                   <span className="max-w-[100px] truncate hidden sm:inline">{userProfile?.username || 'Profile'}</span>
                 </button>
-                <button 
-                  onClick={handleLogout} 
+                <button
+                  onClick={handleLogout}
                   className="flex items-center gap-1 text-sm bg-red-600 hover:bg-red-700 px-2 sm:px-3 py-1.5 rounded transition"
                   title="Logout"
                 >
@@ -125,7 +125,7 @@ function App() {
         ) : (
           <>
             {isSchemaOpen && (
-              <div 
+              <div
                 className="fixed inset-0 bg-black/50 z-40 md:hidden transition-opacity"
                 onClick={() => setIsSchemaOpen(false)}
               />
@@ -138,7 +138,7 @@ function App() {
             <div className="flex-1 p-4 sm:p-6 h-full overflow-hidden flex flex-col min-w-0">
               <div className="md:hidden flex items-center justify-between mb-4 bg-white p-3 rounded-lg shadow-sm shrink-0">
                 <span className="font-semibold text-gray-700">Query Database</span>
-                <button 
+                <button
                   onClick={() => setIsSchemaOpen(true)}
                   className="flex items-center gap-2 text-blue-600 bg-blue-50 px-3 py-1.5 rounded-md hover:bg-blue-100 transition-colors"
                 >
@@ -153,10 +153,10 @@ function App() {
       </main>
 
       {isProfileOpen && (
-        <ProfileModal 
-          user={userProfile} 
-          onClose={() => setIsProfileOpen(false)} 
-          onUpdate={(updated) => setUserProfile(updated)} 
+        <ProfileModal
+          user={userProfile}
+          onClose={() => setIsProfileOpen(false)}
+          onUpdate={(updated) => setUserProfile(updated)}
         />
       )}
     </div>

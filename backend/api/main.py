@@ -83,6 +83,10 @@ app = FastAPI(title="Hybrid NLP to SQL API with Neon DB", version="4.0.0")
 frontend_url = os.getenv("FRONTEND_URL", "http://localhost:5173")
 origins = [url.strip() for url in frontend_url.split(",")] if frontend_url else ["http://localhost:5173"]
 
+# Add the deployed frontend fallback explicitly to avoid CORS issues
+if "https://dbms-using-ai-seven.vercel.app" not in origins:
+    origins.append("https://dbms-using-ai-seven.vercel.app")
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,

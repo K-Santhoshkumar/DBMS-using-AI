@@ -9,7 +9,13 @@
     "routes": [
         {
             "src": "/(.*)",
-            "dest": "api/main.py"
+            "dest": "api/main.py",
+            "headers": {
+                "Access-Control-Allow-Origin": "https://dbms-using-ai-seven.vercel.app",
+                "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+                "Access-Control-Allow-Headers": "X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version, Authorization",
+                "Access-Control-Allow-Credentials": "true"
+            }
         }
     ]
 }
